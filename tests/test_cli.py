@@ -21,6 +21,29 @@ class TestParser(unittest.TestCase):
         self.assertEqual(args.instance, "123")
         self.assertEqual(_strip_dashes(args.cmd), ["nvidia-smi", "-L"])
 
+    def test_exec_flags_after_positional(self):
+        # regression: flags after the instance id must be parsed as flags,
+        # not swallowed into the remote command (argparse.REMAINDER did that)
+        from vastkit.cli import split_remote_command
+
+        head, tail = split_remote_command([
+            "exec", "123", "--detach", "--job", "j1", "--cwd", "/w",
+            "--env", "A=1", "--", "pip", "install", "-q", "x",
+        ])
+        args = self.parser.parse_args(head)
+        self.assertTrue(args.detach)
+        self.assertEqual(args.job, "j1")
+        self.assertEqual(args.cwd, "/w")
+        self.assertEqual(args.env, ["A=1"])
+        self.assertEqual(tail, ["pip", "install", "-q", "x"])
+
+    def test_split_noop_for_other_commands(self):
+        from vastkit.cli import split_remote_command
+
+        head, tail = split_remote_command(["search", "--gpu", "L40S"])
+        self.assertEqual(tail, [])
+        self.assertEqual(head, ["search", "--gpu", "L40S"])
+
     def test_rent_env(self):
         args = self.parser.parse_args(["rent", "--env", "A=1", "--env", "B=x=y", "-y"])
         self.assertEqual(parse_env(args.env), {"A": "1", "B": "x=y"})

@@ -26,7 +26,7 @@ from .lifecycle import (
 )
 from .models import Instance, Offer
 from .query import build_query, expand_geolocation, match_geolocation
-from .ranking import SORT_MODES, rank_offers
+from .ranking import SORT_MODES, cap_bandwidth_cost, rank_offers
 from .remote import RemoteError
 
 # --------------------------------------------------------------------- style
@@ -145,6 +145,7 @@ def run_search(api: VastAPI, args: argparse.Namespace) -> List[Offer]:
     codes = expand_geolocation(args.geo)
     if codes:
         offers = [o for o in offers if match_geolocation(o.geolocation, codes)]
+    offers = cap_bandwidth_cost(offers, args.max_bw)
     return rank_offers(offers, sort=args.sort, hours=args.hours, download_gb=args.download_gb)
 
 
@@ -475,6 +476,9 @@ def _add_search_flags(p: argparse.ArgumentParser, disk_default: float) -> None:
                    help="max hourly price (default: 2.0)")
     p.add_argument("--inet-down", type=float, default=200, metavar="MBPS",
                    help="min download bandwidth (default: 200)")
+    p.add_argument("--max-bw", type=float, default=0, metavar="$/TB",
+                   help="drop hosts charging more than this per TB downloaded "
+                        "(e.g. 10 = $0.01/GB; default: no cap)")
     p.add_argument("--reliability", type=float, default=0.90,
                    help="min host reliability 0..1 (default: 0.90)")
     p.add_argument("--cuda", type=float, default=0, metavar="VER",
@@ -541,12 +545,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("ssh", parents=[common], help="interactive shell (or one-off command)")
     p.add_argument("instance", nargs="?")
-    p.add_argument("cmd", nargs=argparse.REMAINDER, help="optional command after --")
+    p.add_argument("cmd", nargs="*", default=[], help="optional command after --")
     p.set_defaults(func=cmd_ssh)
 
     p = sub.add_parser("exec", parents=[common], help="run a command on the instance")
     p.add_argument("instance")
-    p.add_argument("cmd", nargs=argparse.REMAINDER, help="command after --")
+    p.add_argument("cmd", nargs="*", default=[], help="command after --")
     p.add_argument("--env", action="append", metavar="K=V", help="remote env var; repeatable")
     p.add_argument("--cwd", default="", help="remote working directory")
     p.add_argument("--detach", action="store_true",
@@ -603,9 +607,22 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
+def split_remote_command(argv: List[str]) -> "tuple[List[str], List[str]]":
+    """Split argv at the first standalone ``--``: left is parsed by argparse,
+    right is the verbatim remote command (may contain its own flags)."""
+    if argv and argv[0] in ("exec", "ssh") and "--" in argv:
+        idx = argv.index("--")
+        return argv[:idx], argv[idx + 1:]
+    return argv, []
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    raw = list(sys.argv[1:]) if argv is None else list(argv)
+    head, tail = split_remote_command(raw)
+    args = parser.parse_args(head)
+    if tail:
+        args.cmd = tail
     if not getattr(args, "func", None):
         parser.print_help()
         return 2

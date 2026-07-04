@@ -143,11 +143,13 @@ def start_detached(
     jd = _job_dir(job)
     script = "#!/bin/bash\n" + wrap_command(command, env, cwd) + "\n"
     b64 = base64.b64encode(script.encode()).decode()
+    # Braces are load-bearing: without them, `... && nohup ... & echo $!`
+    # backgrounds the whole && chain and the pid write races the mkdir.
     setup = (
         f"mkdir -p {jd} && rm -f {jd}/exitcode {jd}/out.log && "
         f"echo {b64} | base64 -d > {jd}/cmd.sh && chmod +x {jd}/cmd.sh && "
-        f"nohup bash -c '{jd}/cmd.sh; echo $? > {jd}/exitcode' "
-        f"> {jd}/out.log 2>&1 & echo $! > {jd}/pid"
+        f"{{ nohup bash -c '{jd}/cmd.sh; echo $? > {jd}/exitcode' "
+        f"> {jd}/out.log 2>&1 & echo $! > {jd}/pid; }}"
     )
     run(host, port, setup, key=key, capture=True)
     return jd

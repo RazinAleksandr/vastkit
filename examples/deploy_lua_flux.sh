@@ -21,7 +21,7 @@ OUT_DIR="${OUT_DIR:-./lua_outputs}"
 # (--json gives us the instance id for scripting)
 INSTANCE=$(vastkit rent \
   --gpu "L40S" --gpu "RTX 6000Ada" --gpu "RTX A6000" --gpu "A40" \
-  --vram 45 --disk 80 --max-price 1.0 --inet-down 500 --cuda 12.4 \
+  --vram 45 --disk 80 --max-price 1.0 --max-bw 10 --inet-down 500 --cuda 12.4 \
   --image pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel \
   --label lua-flux --hours 1 --download-gb 40 \
   --onstart 'apt-get update -qq && apt-get install -y -qq rsync || true' \

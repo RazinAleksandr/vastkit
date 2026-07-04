@@ -94,13 +94,13 @@ vastkit destroy 8901234 --yes
 
 | Command | What it does |
 |---|---|
-| `search` | Query + rank offers. Filters: `--gpu` (repeatable), `--vram`, `--disk`, `--max-price`, `--inet-down`, `--reliability`, `--cuda`, `--geo EU\|SE,NO`, raw `--filter k=op:v`. |
+| `search` | Query + rank offers. Filters: `--gpu` (repeatable), `--vram`, `--disk`, `--max-price`, `--max-bw $/TB`, `--inet-down`, `--reliability`, `--cuda`, `--geo EU\|SE,NO`, raw `--filter k=op:v`. |
 | `rent` | Search (or `--offer ID`), then create → attach SSH key → wait until SSH answers. `--image`, `--disk`, `--label`, `--env K=V`, `--onstart`/`--onstart-file`, `--attempts`, `--boot-timeout`. |
 | `ls` | Instances with status, $/hr, age, accrued cost. |
 | `status [ID]` | Details + live SSH reachability (exit code reflects readiness). |
 | `wait [ID]` | Block until running + SSH-reachable. |
 | `ssh [ID] [-- CMD]` | Interactive shell, or one-off command. |
-| `exec ID -- CMD` | Run a command (`--env`, `--cwd`). `--detach --job NAME` for long jobs. |
+| `exec ID -- CMD` | Run a command (`--env`, `--cwd`). `--detach --job NAME` for long jobs. Everything after `--` is passed verbatim. |
 | `jobs ID` / `logs ID [-f]` | List detached jobs / tail or follow a job's log. |
 | `push ID LOCAL REMOTE` | Upload (rsync → tar fallback). `--exclude`, `--delete`. |
 | `pull ID REMOTE LOCAL` | Download results. |
@@ -116,7 +116,7 @@ Every command takes `--json` for scripting, `--api-key`, and `--ssh-key`. Instan
 effective session cost = dph_total × --hours  +  --download-gb × (internet_down_cost_per_tb / 1000)
 ```
 
-`--sort` modes: `effective` (default, cheapest real session), `price` (raw $/hr), `speed` (highest DLPerf), `value` (DLPerf per session dollar). The search table shows both the sticker price and the session estimate so surprises show up *before* you rent. Only `verified: true`, `rentable: true`, on-demand offers are considered; anything else is available through `--filter`, e.g. `--filter datacenter=eq:true --filter gpu_arch=eq:ada`.
+`--sort` modes: `effective` (default, cheapest real session), `price` (raw $/hr), `speed` (highest DLPerf), `value` (DLPerf per session dollar). The search table shows both the sticker price and the session estimate so surprises show up *before* you rent. For a **hard** cutoff instead of a soft penalty, `--max-bw 10` drops every host charging more than $10/TB for downloads before ranking — some charge $10–20/TB, which no hourly discount can offset on weight-heavy jobs. Only `verified: true`, `rentable: true`, on-demand offers are considered; anything else is available through `--filter`, e.g. `--filter datacenter=eq:true --filter gpu_arch=eq:ada`.
 
 ## GPU name cheat-sheet
 
