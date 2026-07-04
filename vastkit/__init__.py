@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from .api import VastAPI, VastAPIError
-from .models import Instance, Offer
 from .lifecycle import RentSpec, rent, resolve_instance
+from .models import Instance, Offer
 from .query import build_query, parse_filter
 
 __version__ = "0.1.0"

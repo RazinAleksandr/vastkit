@@ -53,7 +53,7 @@ class Offer:
     raw: dict = field(default_factory=dict, repr=False)
 
     @classmethod
-    def from_raw(cls, d: dict) -> "Offer":
+    def from_raw(cls, d: dict) -> Offer:
         return cls(
             id=_i(d, "id"),
             gpu_name=str(d.get("gpu_name") or ""),
@@ -111,7 +111,7 @@ class Instance:
     raw: dict = field(default_factory=dict, repr=False)
 
     @classmethod
-    def from_raw(cls, d: dict) -> "Instance":
+    def from_raw(cls, d: dict) -> Instance:
         return cls(
             id=_i(d, "id"),
             actual_status=str(d.get("actual_status") or ""),

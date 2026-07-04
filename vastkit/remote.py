@@ -85,7 +85,8 @@ def run(
     try:
         proc = subprocess.run(argv, capture_output=capture, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
-        raise RemoteError(f"remote command timed out after {timeout}s: {command[:120]}")
+        raise RemoteError(
+            f"remote command timed out after {timeout}s: {command[:120]}") from None
     if check and proc.returncode != 0:
         detail = (proc.stderr or "").strip()[:800] if capture else ""
         raise RemoteError(
@@ -256,7 +257,8 @@ def push(
     if proc.returncode == 0:
         return
     if not _rsync_unusable(proc.returncode, proc.stderr):
-        raise RemoteError(f"rsync push failed (exit {proc.returncode}):\n{proc.stderr.strip()[:800]}")
+        raise RemoteError(
+            f"rsync push failed (exit {proc.returncode}):\n{proc.stderr.strip()[:800]}")
 
     # Fallback: tar over ssh (remote lacks rsync)
     print("rsync unavailable on remote — falling back to tar-over-ssh", file=sys.stderr)
@@ -265,10 +267,10 @@ def push(
         for pat in excludes:
             tar_cmd += ["--exclude", pat]
         tar_cmd += ["-C", str(local), "."]
-        remote_cmd = f"mkdir -p {shlex.quote(mkdir_target)} && tar -xzf - -C {shlex.quote(mkdir_target)}"
     else:
         tar_cmd = ["tar", "-czf", "-", "-C", str(local.parent), local.name]
-        remote_cmd = f"mkdir -p {shlex.quote(mkdir_target)} && tar -xzf - -C {shlex.quote(mkdir_target)}"
+    target_q = shlex.quote(mkdir_target)
+    remote_cmd = f"mkdir -p {target_q} && tar -xzf - -C {target_q}"
     tar = subprocess.Popen(tar_cmd, stdout=subprocess.PIPE)
     ssh = subprocess.run(
         ssh_argv(host, port, key) + [remote_cmd], stdin=tar.stdout,
@@ -302,7 +304,8 @@ def pull(
     if proc.returncode == 0:
         return
     if not _rsync_unusable(proc.returncode, proc.stderr):
-        raise RemoteError(f"rsync pull failed (exit {proc.returncode}):\n{proc.stderr.strip()[:800]}")
+        raise RemoteError(
+            f"rsync pull failed (exit {proc.returncode}):\n{proc.stderr.strip()[:800]}")
 
     print("rsync unavailable on remote — falling back to tar-over-ssh", file=sys.stderr)
     rp = remote_path.rstrip("/")

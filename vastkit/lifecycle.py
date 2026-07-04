@@ -15,9 +15,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
+from . import remote
 from .api import VastAPI, VastAPIError
 from .models import Instance, Offer
-from . import remote
 
 DEFAULT_IMAGE = "pytorch/pytorch:2.4.0-cuda12.4-cudnn9-devel"
 # Vast's own images wrap SSH sessions in tmux; opt out so scripted SSH behaves.

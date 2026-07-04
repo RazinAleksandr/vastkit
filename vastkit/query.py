@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 # ISO 3166 codes for the "EU" geolocation shorthand (EU + EEA + CH/UK).
 EU_COUNTRIES = [

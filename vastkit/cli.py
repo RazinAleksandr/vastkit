@@ -85,7 +85,7 @@ def fmt_table(headers: List[str], rows: List[List[str]], rjust: Optional[Set[int
     return "\n".join(lines)
 
 
-def die(message: str, code: int = 1) -> "NoReturn":  # noqa: F821
+def die(message: str, code: int = 1) -> NoReturn:  # noqa: F821
     print(paint(f"error: {message}", _RED), file=sys.stderr)
     sys.exit(code)
 
@@ -441,7 +441,9 @@ def cmd_destroy(args: argparse.Namespace) -> int:
     for iid in targets:
         try:
             inst, accrued = destroy_instance(api, iid)
-            desc = f" ({inst.gpu_name}, ran {inst.age_hours:.2f}h, ~{money(accrued)})" if inst else ""
+            desc = ""
+            if inst:
+                desc = f" ({inst.gpu_name}, ran {inst.age_hours:.2f}h, ~{money(accrued)})"
             print(f"destroyed {iid}{desc}")
         except VastAPIError as e:
             failures += 1
@@ -519,7 +521,8 @@ def build_parser() -> argparse.ArgumentParser:
                        help="rent the best matching offer and wait until SSH is ready")
     _add_search_flags(p, disk_default=60)
     p.add_argument("--offer", type=int, help="rent this exact offer id (skip search)")
-    p.add_argument("--image", default=DEFAULT_IMAGE, help=f"docker image (default: {DEFAULT_IMAGE})")
+    p.add_argument("--image", default=DEFAULT_IMAGE,
+                   help=f"docker image (default: {DEFAULT_IMAGE})")
     p.add_argument("--label", default="vastkit", help="instance label (default: vastkit)")
     p.add_argument("--onstart", default="", help="shell command(s) to run at boot")
     p.add_argument("--onstart-file", default="", help="file with onstart script")
@@ -607,7 +610,7 @@ def build_parser() -> argparse.ArgumentParser:
     return ap
 
 
-def split_remote_command(argv: List[str]) -> "tuple[List[str], List[str]]":
+def split_remote_command(argv: List[str]) -> tuple[List[str], List[str]]:
     """Split argv at the first standalone ``--``: left is parsed by argparse,
     right is the verbatim remote command (may contain its own flags)."""
     if argv and argv[0] in ("exec", "ssh") and "--" in argv:
